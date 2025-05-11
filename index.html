@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Pulse Relay Control</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #aaddff;
+      font-family: "Segoe UI", sans-serif;
+      text-align: center;
+      padding-top: 80px;
+    }
+    button {
+      background-color: #222;
+      border: 2px solid #aaddff;
+      color: #aaddff;
+      padding: 14px 28px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background-color: #aaddff;
+      color: #000;
+    }
+    #statusText {
+      margin-top: 30px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Pulse Relay</h1>
+  <button onclick="pulseRelay()">Pulse Relay</button>
+  <div id="statusText">Loading status...</div>
+
+  <script>
+    const channelID = '2940658';
+    const readAPIKey = 'EVNUN56SDNPFSB3I';
+    const writeAPIKey = 'Y9UZSEKQI52AY8TO';
+
+    function fetchStatus() {
+      fetch(`https://api.thingspeak.com/channels/${channelID}/fields/1/last.json?api_key=${readAPIKey}`)
+        .then(response => response.json())
+        .then(data => {
+          const value = data.field1;
+          const status = (value === "1") ? "Relay is ON" : "Relay is OFF";
+          document.getElementById("statusText").innerText = "Status: " + status;
+        })
+        .catch(error => {
+          document.getElementById("statusText").innerText = "Error loading status.";
+          console.error(error);
+        });
+    }
+
+    function pulseRelay() {
+      const url = `https://api.thingspeak.com/update?api_key=${writeAPIKey}&field1=1`;
+      fetch(url)
+        .then(() => {
+          // Wait longer (15 seconds) to allow ESP32 to pulse and reset field1 to 0
+          setTimeout(fetchStatus, 15000);
+        });
+    }
+
+    // Initial fetch and regular updates
+    fetchStatus();
+    setInterval(fetchStatus, 15000); // Check status every 15 seconds
+  </script>
+</body>
+</html>
